@@ -1,11 +1,10 @@
 const express = require('express');
 const app = express();
-
-// Import multer
 const multer = require('multer');
-
 const nodemailer = require('nodemailer');
+const fs = require('fs');
 require('dotenv').config();
+
 const PORT = process.env.PORT;
 
 //  Middleware
@@ -37,6 +36,7 @@ app.post('/', (req, res) => {
   attachmentUpload(req, res, async function (error) {
     if (error) {
       console.log('Error uploading file');
+      return res.send('Error uploading file');
     } else {
       console.log(req.body);
       const transporter = nodemailer.createTransport({
@@ -50,21 +50,35 @@ app.post('/', (req, res) => {
       const mailOptions = {
         from: req.body.email,
         to: process.env.MAIL_TO,
-        subject: req.body.subject,
-        text: req.body.message,
+        subject: process.env.MAIL_SUBJECT,
+        text: `
+        Ees- ja perekonnanimi: ${req.body.name} 
+        E-post: ${req.body.email}
+        Telefon: ${req.body.phone}
+        Ametikoht: ${req.body.position}
+        Ettepaneku/ kaebuse sisu (mis juhtus, millal juhtus) ja selgelt väljendatud nõue: ${req.body.message_1}
+        Soovin jääda asutusesisese menetluse käigus anonüümseks: ${req.body.anonAnswer}
+        `,
         attachments: [
           {
-            path: req.body.attachmentPath,
+            path: req.file?.path,
           },
         ],
       };
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-          console.log(error);
           res.send('error');
         } else {
-          console.log('Email sent: ' + info.response);
           res.send('success');
+          // Delete file from the folder after sent
+          fs.unlink(attachmentPath, function (err) {
+            if (err) {
+              return res.end(err);
+            } else {
+              console.log(attachmentPath + ' has been deleted');
+              return res.redirect('/success.html');
+            }
+          });
         }
       });
     }
