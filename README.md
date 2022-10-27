@@ -9,3 +9,4 @@
    - MAIL_PASS='' // Password of e-mail server user
    - MAIL_TO='' // To whom e-mails are being sent
    - PORT=3000 // default
+   - MAIL_SUBJECT='' // add mail subject here

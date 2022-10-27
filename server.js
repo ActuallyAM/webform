@@ -1,10 +1,10 @@
 const express = require('express');
-const app = express();
+const path = require('path');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 require('dotenv').config();
-
+const app = express();
 const PORT = process.env.PORT;
 
 //  Middleware
@@ -14,26 +14,27 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Multer file storage
-const Storage = multer.diskStorage({
-  destination: function (req, file, callback) {
-    callback(null, './attachments');
+const fileStorageEngine = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, './uploads/'));
   },
-  filename: function (req, file, callback) {
-    callback(null, `${file.fieldname}_${Date.now()}_${file.originalname}`);
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '--' + file.originalname);
   },
 });
 
 // Middleware to get attachments
-const attachmentUpload = multer({
-  storage: Storage,
-}).single('attachment');
+
+const upload = multer({
+  storage: fileStorageEngine,
+}).array('attachment', 4);
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/contactform.html');
 });
 
 app.post('/', (req, res) => {
-  attachmentUpload(req, res, async function (error) {
+  upload(req, res, async function (error) {
     if (error) {
       console.log('Error uploading file');
       return res.send('Error uploading file');
@@ -52,7 +53,7 @@ app.post('/', (req, res) => {
         to: process.env.MAIL_TO,
         subject: process.env.MAIL_SUBJECT,
         text: `
-        Ees- ja perekonnanimi: ${req.body.name} 
+        Ees- ja perekonnanimi: ${req.body.name}
         E-post: ${req.body.email}
         Telefon: ${req.body.phone}
         Ametikoht: ${req.body.position}
@@ -61,7 +62,12 @@ app.post('/', (req, res) => {
         `,
         attachments: [
           {
-            path: req.file?.path,
+            filename: 'tehik-logo.png',
+            path: './images/uploadedImages-1666849225184.png',
+          },
+          {
+            filename: 'vp-logo.png',
+            path: './images/uploadedImages-1666849532534.png',
           },
         ],
       };
@@ -71,14 +77,14 @@ app.post('/', (req, res) => {
         } else {
           res.send('success');
           // Delete file from the folder after sent
-          fs.unlink(attachmentPath, function (err) {
-            if (err) {
-              return res.end(err);
-            } else {
-              console.log(attachmentPath + ' has been deleted');
-              return res.redirect('/success.html');
-            }
-          });
+          // fs.unlink(attachmentPath, function (err) {
+          //   if (err) {
+          //     return res.end(err);
+          //   } else {
+          //     console.log(attachmentPath + ' has been deleted');
+          //     return res.redirect('/');
+          //   }
+          // });
         }
       });
     }

@@ -24,7 +24,7 @@ contactForm.addEventListener('submit', (e) => {
     position: position.value,
     message_1: message_1.value,
     anonAnswer: anonAnswer.value,
-    attachment: attachment?.value,
+    // attachment: attachment?.value,
   };
 
   let xhr = new XMLHttpRequest();
